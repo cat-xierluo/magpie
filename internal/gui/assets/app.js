@@ -17444,6 +17444,8 @@ function resetsWords(r, q) {
       w.append(el("span", "resets-until", " · " + t("until {when}", { when: resetClock(at) })));
       if (!r.each?.length) w.title += "\n" + t("The first runs out {when}", { when: at.toLocaleString(intlLang()) });
     }
+    const soon = resetsExpiringSoon(r);
+    if (soon) w.append(el("span", "resets-soon", " · " + t("{n} of them run out within two hours", { n: soon })));
     if (r.each?.length) w.title += "\n" + resetsEach(r);
     return w;
   }
@@ -17462,6 +17464,17 @@ function resetsWords(r, q) {
     }
   } else if (r.each?.length) w.title = resetsEach(r);
   return w;
+}
+
+// resetsExpiringSoon counts the resets still available that run out
+// within two hours: a GLM plan's card says so on its line, not only in
+// the list of each one. A card whose per-reset ends weren't read counts
+// none rather than reading its soonest end as one.
+function resetsExpiringSoon(r, now = Date.now()) {
+  return (r.each ?? []).filter((c) => {
+    const at = c.until ? Date.parse(c.until) : NaN;
+    return Number.isFinite(at) && at > now && at - now <= 2 * 3600e3;
+  }).length;
 }
 
 // resetsEach lists every reset left and when it runs out, a line each,
